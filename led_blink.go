@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"runtime"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -18,15 +19,8 @@ var stopchan = make(chan struct{})
 
 func blink(id int) {
 	log.Println("starting to blink pin", pins[id])
-	err := rpio.Open()
-	if err != nil {
-		log.Fatalln("gpio open fail", err)
-	}
-
-	defer rpio.Close()
 
 	state := rpio.Low
-
 	pin := rpio.Pin(pins[id])
 	for {
 		select {
@@ -66,6 +60,14 @@ func initAndBlink(led string) {
 		pin.Low()
 	}
 
+	defer func() {
+		for _, i := range pins {
+			pin := rpio.Pin(i)
+			pin.Low()
+		}
+		log.Println("all leds off")
+	}()
+
 	log.Printf("init done, args: %+v", os.Args)
 
 	switch led {
@@ -81,13 +83,11 @@ func initAndBlink(led string) {
 	<-sigc
 
 	log.Println("software exit, shut down leds")
+	log.Printf("%d running routines", runtime.NumGoroutine())
 	// Stopping go routine
 	close(stopchan)
-	for _, i := range pins {
-		pin := rpio.Pin(i)
-		pin.Low()
-	}
-	log.Println("all leds off")
+
+	time.Sleep(2 * INTERVAL)
 }
 
 func main() {
