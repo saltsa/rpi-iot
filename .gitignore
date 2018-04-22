@@ -1,0 +1,4 @@
+.env
+main
+rpi_mon
+*.pem
