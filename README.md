@@ -15,6 +15,9 @@ Blinks led. Either red, green or blue color is supported.
 ## Monitor
 
 Detects motions from motion sensor and sends data to the cloud. Also blinks leds.
+
+Data is sent to Cloud IoT service in JSON format using MQTT transport.
+
 ```
 ./compile_rpi.sh
 ```
