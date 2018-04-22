@@ -32,7 +32,8 @@ First, compile:
 
 Then copy the binary and `ec_private.pem` to Raspberry PI or other device.
 
-And finally set environment variables and run!
+And finally set environment variables and run! For more permanent solution,
+there's `rpi-mon.service` file for systemd.
 
 
 ## Certificates and device creation for Cloud IoT connectivity
