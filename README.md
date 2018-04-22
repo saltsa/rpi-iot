@@ -18,14 +18,22 @@ Detects motions from motion sensor and sends data to the cloud. Also blinks leds
 
 Data is sent to Cloud IoT service in JSON format using MQTT transport.
 
+### Dependencies
+```
+go get
+```
+
+### Installation
+
+First, compile:
 ```
 ./compile_rpi.sh
 ```
 
-Before that, getdeps:
-```
-go get
-```
+Then copy the binary and `ec_private.pem` to Raspberry PI or other device.
+
+And finally set environment variables and run!
+
 
 ## Certificates and device creation for Cloud IoT connectivity
 
