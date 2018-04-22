@@ -2,8 +2,6 @@ package main
 
 import (
 	"os"
-	"os/signal"
-	"runtime"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -13,7 +11,7 @@ import (
 var pins = [3]int{25, 8, 7}
 
 // INTERVAL the interval in ms
-const INTERVAL = 50 * time.Millisecond
+const INTERVAL = 250 * time.Millisecond
 
 var stopchan = make(chan struct{})
 
@@ -54,10 +52,6 @@ func initAndBlink(led string) {
 		pin := rpio.Pin(i)
 		pin.Output()
 		pin.Low()
-		time.Sleep(INTERVAL)
-		pin.High()
-		time.Sleep(INTERVAL)
-		pin.Low()
 	}
 
 	defer func() {
@@ -72,25 +66,21 @@ func initAndBlink(led string) {
 
 	switch led {
 	case "red":
-		go blink(0)
+		blink(0)
 	case "green":
-		go blink(1)
+		blink(1)
 	case "blue":
-		go blink(2)
+		blink(2)
 	}
-	sigc := make(chan os.Signal, 1)
-	signal.Notify(sigc, os.Interrupt, os.Kill)
-	<-sigc
 
-	log.Println("software exit, shut down leds")
-	log.Printf("%d running routines", runtime.NumGoroutine())
+	log.Println("blinking done")
+
+	//time.Sleep(10 * time.Second)
 	// Stopping go routine
-	close(stopchan)
-
-	time.Sleep(2 * INTERVAL)
+	//close(stopchan)
 }
 
-func main() {
+func maintest() {
 	if len(os.Args) > 1 {
 		led := os.Args[1]
 		initAndBlink(led)
