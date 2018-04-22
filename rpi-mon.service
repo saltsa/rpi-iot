@@ -1,0 +1,20 @@
+[Unit]
+Description=Motion detector and led blinker
+
+[Service]
+ExecStart=/home/pi/rpi_mon
+WorkingDirectory=/home/pi
+# Run as root, no security. Software needs access to /dev/mem
+# TODO: Replace with /dev/gpiomem in future
+User=root
+Group=root
+RestartSec=30sec
+Restart=always
+
+# Modify these
+Environment=IOT_REGISTRY=AAA
+Environment=IOT_PROJECT_ID=BBB
+Environment=IOT_DEVICE_NAME=CCC
+
+[Install]
+WantedBy=multi-user.target
