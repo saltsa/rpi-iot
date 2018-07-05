@@ -1,7 +1,9 @@
 package main
 
 import (
+	"math/rand"
 	"os"
+	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -11,11 +13,26 @@ import (
 var pins = [3]int{25, 8, 7}
 
 // INTERVAL the interval in ms
-const INTERVAL = 250 * time.Millisecond
+const INTERVAL = 100 * time.Millisecond
+
+var blinkLock sync.Mutex
 
 var stopchan = make(chan struct{})
 
-func blink(id int) {
+func nameToIdx(name string) int {
+	switch name {
+	case "red":
+		return 0
+	case "green":
+		return 1
+	case "blue":
+		return 2
+	default:
+		return rand.Int() % 3
+	}
+}
+
+func continuousBlink(id int) {
 	log.Println("starting to blink pin", pins[id])
 
 	state := rpio.Low
@@ -37,14 +54,25 @@ func blink(id int) {
 	}
 }
 
-func initAndBlink(led string) {
+func blinkLed(color string) {
+	blinkLock.Lock()
+	defer blinkLock.Unlock()
+	id := nameToIdx(color)
+	pin := rpio.Pin(pins[id])
+	pin.High()
+	time.Sleep(INTERVAL)
+	pin.Low()
+	time.Sleep(INTERVAL)
+}
+
+func initBlink() {
 
 	err := rpio.Open()
 	if err != nil {
 		log.Fatalln("gpio open fail", err)
 	}
 
-	defer rpio.Close()
+	//defer rpio.Close()
 
 	log.Println("initialising pins....")
 
@@ -54,26 +82,29 @@ func initAndBlink(led string) {
 		pin.Low()
 	}
 
-	defer func() {
-		for _, i := range pins {
-			pin := rpio.Pin(i)
-			pin.Low()
+	// skip constant blinking
+	/*
+		defer func() {
+			for _, i := range pins {
+				pin := rpio.Pin(i)
+				pin.Low()
+			}
+			log.Println("all leds off")
+		}()
+
+		log.Printf("init done, args: %+v", os.Args)
+
+		switch led {
+		case "red":
+			blink(0)
+		case "green":
+			blink(1)
+		case "blue":
+			blink(2)
 		}
-		log.Println("all leds off")
-	}()
 
-	log.Printf("init done, args: %+v", os.Args)
-
-	switch led {
-	case "red":
-		blink(0)
-	case "green":
-		blink(1)
-	case "blue":
-		blink(2)
-	}
-
-	log.Println("blinking done")
+		log.Println("blinking done")
+	*/
 
 	//time.Sleep(10 * time.Second)
 	// Stopping go routine
@@ -83,6 +114,7 @@ func initAndBlink(led string) {
 func maintest() {
 	if len(os.Args) > 1 {
 		led := os.Args[1]
-		initAndBlink(led)
+		initBlink()
+		continuousBlink(nameToIdx(led))
 	}
 }

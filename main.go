@@ -17,6 +17,10 @@ import (
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
+const (
+	mqttInterval = 15 * time.Second
+)
+
 var msgHandler MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
 	log.Printf("TOPIC: %s", msg.Topic())
 	log.Printf("ID: %d", msg.MessageID())
@@ -122,7 +126,6 @@ func startMqtt() {
 
 	for i := uint64(0); ; i++ {
 		data := motionState.Load().(dataStruct)
-
 		data.PublishedAt = time.Now()
 		motionState.Store(data)
 
@@ -135,16 +138,19 @@ func startMqtt() {
 		var token MQTT.Token
 
 		if i%10 == 0 {
-			log.Printf("state to %s: %s", stateTopic, text)
+			log.Printf("Sending state to topic %s: %s", stateTopic, text)
 			token = c.Publish(stateTopic, 1, false, text)
 			token.Wait()
 		}
 
-		log.Printf("publishing %d to %s: %s", i, telemetryTopic, text)
+		log.Debugf("publishing %d to %s: %s", i, telemetryTopic, text)
 		token = c.Publish(telemetryTopic, 1, false, text)
 		token.Wait()
 
-		time.Sleep(15 * time.Second)
+		// this is blocking 200 ms or something
+		go blinkLed("blue")
+
+		time.Sleep(mqttInterval)
 	}
 }
 
@@ -194,6 +200,7 @@ func init() {
 	motionState.Store(newDataStruct())
 }
 
+// getMotion reads motion from motion sensors. True if detected, false otherwise
 func getMotion() bool {
 	v := motionPin.Read()
 	if v == 0 {
@@ -205,29 +212,35 @@ func getMotion() bool {
 var motionState atomic.Value
 var motionCount uint64
 
+// updateMotionStruct updates motion struct when necessary, running goroutine
+// it also reads motion from the sensor
+func updateMotionStruct() {
+	for {
+		ds := newDataStruct()
+		ds.Motion = getMotion()
+
+		if ds.Motion {
+			atomic.AddUint64(&motionCount, 1)
+		}
+		oldDs := motionState.Load().(dataStruct)
+
+		// update only if data published or (if not published)
+		// when motion is detected or the value has changed one minute ago and
+		// state changed
+		if !oldDs.PublishedAt.IsZero() ||
+			(time.Now().Sub(oldDs.Time) > time.Minute && oldDs.Motion != ds.Motion) ||
+			ds.Motion {
+			motionState.Store(ds)
+		}
+		go blinkLed("red")
+
+		time.Sleep(500 * time.Millisecond)
+	}
+}
+
 func main() {
 
-	go func() {
-		for {
-			ds := newDataStruct()
-			ds.Motion = getMotion()
-
-			if ds.Motion {
-				atomic.AddUint64(&motionCount, 1)
-			}
-			oldDs := motionState.Load().(dataStruct)
-
-			// update only if data published or (if not published)
-			// when motion is detected or the value has changed one minute ago and
-			// state changed
-			if !oldDs.PublishedAt.IsZero() ||
-				(time.Now().Sub(oldDs.Time) > time.Minute && oldDs.Motion != ds.Motion) ||
-				ds.Motion {
-				motionState.Store(ds)
-			}
-			time.Sleep(500 * time.Millisecond)
-		}
-	}()
+	go updateMotionStruct()
 
 	// wait for it and then try to exit
 	// doesn't work correctly with mqtt atm, so it panics
@@ -236,7 +249,7 @@ func main() {
 
 	go startMqtt()
 
-	go initAndBlink("red")
+	//go initBlink()
 	log.Println("waiting signal...")
 
 	<-sigc
