@@ -31,5 +31,11 @@ jobs:
             GOOS: linux
             GOARCH: arm
             GOARM: 5
+      - run:
+          command: go install
+          environment:
+            GOOS: linux
+            GOARCH: arm
+            GOARM: 5
       - store_artifacts:
           path: /go/bin/rpi-iot
