@@ -22,6 +22,10 @@ Detects motions from motion sensor and sends data to the cloud. Also blinks leds
 Data is sent to Cloud IoT service in JSON format using MQTT transport.
 
 ### Dependencies
+
+This uses go 1.11.
+
+
 ```
 go get
 ```
