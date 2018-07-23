@@ -25,6 +25,7 @@ jobs:
       GOARM: 5
       GO111MODULE: "on"
     steps:
+      - run: apk add -u ssh git ca-certificates
       - checkout
 
       # specify any bash command here prefixed with `run: `
