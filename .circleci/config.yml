@@ -31,4 +31,5 @@ jobs:
             GOOS: linux
             GOARCH: arm
             GOARM: 5
-      - store_artifacts: /go/bin/rpi-iot
+      - store_artifacts:
+          path: /go/bin/rpi-iot
