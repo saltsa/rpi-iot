@@ -6,7 +6,7 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.11-rc
       
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -18,24 +18,20 @@ jobs:
     ####   /go/src/github.com/circleci/go-tool
     ####   /go/src/bitbucket.org/circleci/go-tool
     working_directory: /go/src/github.com/saltsa/rpi-iot
+    environment:
+      GOOS: linux
+      GOARCH: arm
+      GOARM: 5
     steps:
       - checkout
 
       # specify any bash command here prefixed with `run: `
       - run: go get -v -t -d ./...
-      - run: go test -v ./...
+      #- run: go test -v ./...
       # Build for raspberry pi
       - run:
           command: go build
-          environment:
-            GOOS: linux
-            GOARCH: arm
-            GOARM: 5
       - run:
           command: go install
-          environment:
-            GOOS: linux
-            GOARCH: arm
-            GOARM: 5
       - store_artifacts:
           path: /go/bin
