@@ -68,7 +68,7 @@ func createToken() string {
 
 func cp() (user, pass string) {
 	token := createToken()
-	log.Printf("New creds: %s", token)
+	log.Debugf("New creds: %s", token)
 	return "user", token
 }
 
@@ -138,8 +138,9 @@ func startMqtt() {
 		var token MQTT.Token
 
 		if i%10 == 0 {
-			log.Printf("Sending state to topic %s: %s", stateTopic, text)
-			token = c.Publish(stateTopic, 1, false, text)
+			stateText := fmt.Sprintf("motionCount=%d", data.MotionCount)
+			log.Printf("Sending state to topic %s: %s", stateTopic, stateText)
+			token = c.Publish(stateTopic, 1, false, stateText)
 			token.Wait()
 		}
 
@@ -171,7 +172,6 @@ func getMqttClientID() string {
 }
 
 func init() {
-	log.SetLevel(log.DebugLevel)
 
 	viper.SetDefault("region", "europe-west1")
 	viper.SetDefault("mqtt_host", "tls://mqtt.googleapis.com:8883")
@@ -184,6 +184,13 @@ func init() {
 	location = viper.GetString("region")
 	registry = viper.GetString("registry")
 	deviceID = viper.GetString("device_name")
+
+	debug := viper.GetBool("debug")
+
+	if debug {
+		log.Println("Enabling debug logging")
+		log.SetLevel(log.DebugLevel)
+	}
 
 	err := rpio.Open()
 	if err != nil {
@@ -231,8 +238,8 @@ func updateMotionStruct() {
 			(time.Now().Sub(oldDs.Time) > time.Minute && oldDs.Motion != ds.Motion) ||
 			ds.Motion {
 			motionState.Store(ds)
+			go blinkLed("red")
 		}
-		go blinkLed("red")
 
 		time.Sleep(500 * time.Millisecond)
 	}
