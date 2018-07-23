@@ -24,6 +24,8 @@ jobs:
       GOARM: 5
       GO111MODULE: "on"
     steps:
+      - run: apt-get update
+      - run: apt-get upgrade -y git
       - checkout
 
       # specify any bash command here prefixed with `run: `
