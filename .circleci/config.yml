@@ -6,7 +6,8 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: circleci/golang:1.11-rc
+      #- image: circleci/golang:1.11-rc
+      - image: golang:rc-alpine3.8
       
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -24,8 +25,6 @@ jobs:
       GOARM: 5
       GO111MODULE: "on"
     steps:
-      - run: apt-get update
-      - run: apt-get upgrade -y git
       - checkout
 
       # specify any bash command here prefixed with `run: `
