@@ -22,6 +22,7 @@ jobs:
       GOOS: linux
       GOARCH: arm
       GOARM: 5
+      GO111MODULE: on
     steps:
       - checkout
 
