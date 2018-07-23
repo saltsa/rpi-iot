@@ -23,7 +23,7 @@ jobs:
       GOOS: linux
       GOARCH: arm
       GOARM: 5
-      GO111MODULE: "on"
+      #GO111MODULE: "on"
     steps:
       - run: apk add -u openssh git ca-certificates
       - checkout
