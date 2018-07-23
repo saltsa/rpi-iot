@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/saltsa/rpi-iot.svg?style=svg)](https://circleci.com/gh/saltsa/rpi-iot)
+
 # Raspberry PI IoT things
 
 ## Environment
