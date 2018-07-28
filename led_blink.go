@@ -77,6 +77,7 @@ func initBlink() {
 	log.Println("initialising pins....")
 
 	for _, i := range pins {
+		log.Printf("setting pin %d to output and low", i)
 		pin := rpio.Pin(i)
 		pin.Output()
 		pin.Low()
