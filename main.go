@@ -247,6 +247,10 @@ func updateMotionStruct() {
 
 func main() {
 
+	// first configure gpio
+	initBlink()
+
+	// start blinking thread
 	go updateMotionStruct()
 
 	// wait for it and then try to exit
@@ -256,7 +260,6 @@ func main() {
 
 	go startMqtt()
 
-	//go initBlink()
 	log.Println("waiting signal...")
 
 	<-sigc
