@@ -93,7 +93,7 @@ func (myLogger) Printf(format string, v ...interface{}) { log.Debugf(format, v) 
 
 func startMqtt() {
 
-	//MQTT.DEBUG = myLogger{}
+	// MQTT.DEBUG = myLogger{}
 	MQTT.CRITICAL = myLogger{}
 	MQTT.ERROR = myLogger{}
 	MQTT.WARN = myLogger{}
@@ -101,16 +101,16 @@ func startMqtt() {
 	opts := MQTT.NewClientOptions().AddBroker(mqttHost)
 	opts.SetClientID(getMqttClientID())
 	opts.SetDefaultPublishHandler(msgHandler)
-
 	opts.SetCredentialsProvider(cp)
 
+	opts.SetProtocolVersion(4)
 	c := MQTT.NewClient(opts)
 
 	log.Println("connecting to:", mqttHost)
 	log.Println("client id:", getMqttClientID())
 
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
+		log.Fatalln(token.Error())
 	}
 
 	//time.Sleep(3 * time.Second)
@@ -155,7 +155,7 @@ func startMqtt() {
 	}
 }
 
-var motionSourceExists bool
+var gpioReady bool
 var motionPin rpio.Pin
 
 var mqttHost string
@@ -194,26 +194,26 @@ func init() {
 
 	err := rpio.Open()
 	if err != nil {
-		motionSourceExists = false
-		log.Fatalln("gpio open fail", err)
-		return
+		log.Println("gpio open fail", err)
+	} else {
+		gpioReady = true
 	}
 
-	log.Println("configuring motion pin for input mode")
-	motionPin = rpio.Pin(23)
-	motionPin.Input()
-	motionSourceExists = true
-
+	if gpioReady {
+		log.Println("configuring motion pin for input mode")
+		motionPin = rpio.Pin(23)
+		motionPin.Input()
+	}
 	motionState.Store(newDataStruct())
 }
 
 // getMotion reads motion from motion sensors. True if detected, false otherwise
 func getMotion() bool {
 	v := motionPin.Read()
-	if v == 0 {
-		return false
+	if v != 0 {
+		return true
 	}
-	return true
+	return false
 }
 
 var motionState atomic.Value
@@ -235,7 +235,7 @@ func updateMotionStruct() {
 		// when motion is detected or the value has changed one minute ago and
 		// state changed
 		if !oldDs.PublishedAt.IsZero() ||
-			(time.Now().Sub(oldDs.Time) > time.Minute && oldDs.Motion != ds.Motion) ||
+			(time.Since(oldDs.Time) > time.Minute && oldDs.Motion != ds.Motion) ||
 			ds.Motion {
 			motionState.Store(ds)
 			go blinkLed("red")
@@ -251,12 +251,13 @@ func main() {
 	initBlink()
 
 	// start blinking thread
+
 	go updateMotionStruct()
 
 	// wait for it and then try to exit
 	// doesn't work correctly with mqtt atm, so it panics
 	sigc := make(chan os.Signal, 1)
-	signal.Notify(sigc, os.Interrupt, os.Kill)
+	signal.Notify(sigc, os.Interrupt)
 
 	go startMqtt()
 

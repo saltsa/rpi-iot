@@ -57,6 +57,9 @@ func continuousBlink(id int) {
 func blinkLed(color string) {
 	blinkLock.Lock()
 	defer blinkLock.Unlock()
+	if !gpioReady {
+		return
+	}
 	id := nameToIdx(color)
 	pin := rpio.Pin(pins[id])
 	pin.High()
@@ -67,13 +70,10 @@ func blinkLed(color string) {
 
 func initBlink() {
 
-	err := rpio.Open()
-	if err != nil {
-		log.Fatalln("gpio open fail", err)
+	if !gpioReady {
+		log.Println("init fail, gpio not ready")
+		return
 	}
-
-	//defer rpio.Close()
-
 	log.Println("initialising pins....")
 
 	for _, i := range pins {
@@ -83,33 +83,6 @@ func initBlink() {
 		pin.Low()
 	}
 
-	// skip constant blinking
-	/*
-		defer func() {
-			for _, i := range pins {
-				pin := rpio.Pin(i)
-				pin.Low()
-			}
-			log.Println("all leds off")
-		}()
-
-		log.Printf("init done, args: %+v", os.Args)
-
-		switch led {
-		case "red":
-			blink(0)
-		case "green":
-			blink(1)
-		case "blue":
-			blink(2)
-		}
-
-		log.Println("blinking done")
-	*/
-
-	//time.Sleep(10 * time.Second)
-	// Stopping go routine
-	//close(stopchan)
 }
 
 func maintest() {
